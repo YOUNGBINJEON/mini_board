@@ -40,11 +40,72 @@ select count(bno) from tbl_board
 </select>
 
 <!-- 게시물 목록 + 페이징 -->
-<select id="listPage" parameterType="hashMap" resultType="com.board.domain.BoardVO">
-select bno, title, writer, regDate, viewCnt 
-from tbl_board 
-order by bno desc 
-limit #{displayPost}, #{postNum}
+<select id="listPage" parameterType="hashMap" 
+resultType="com.board.domain.BoardVO">
+select bno, title, content, writer, regDate, viewCnt 
+from (select bno, title, content, writer, regDate, viewCnt, row_number() 
+		over(order by bno desc) as rNum 
+			from tbl_board
+			) mb 
+				where rNum between #{displayPost} and #{postNum} 
+					order by bno desc
 </select>
+   
+<!-- 게시물 목록 + 페이징 + 검색 -->
+<select id="listPageSearch" parameterType="hashMap" resultType="com.board.domain.BoardVO">
+select bno, title, content, writer, regDate, viewCnt 
+from (select bno, title, content, writer, regDate, viewCnt, row_number() 
+		over(order by bno desc) as rNum 
+			from tbl_board
+			) mb 
+ 
+ <if test='searchType.equals("title")'>
+  WHERE title LIKE concat('%', #{keyword}, '%')
+ </if>
+ 
+ <if test='searchType.equals("content")'>
+  WHERE content LIKE concat('%', #{keyword}, '%')
+ </if>
+ 
+ <if test='searchType.equals("title_content")'>
+  WHERE title LIKE concat('%', #{keyword}, '%') 
+   or content LIKE concat('%', #{keyword}, '%')
+ </if>
+ 
+ <if test='searchType.equals("writer")'>
+  WHERE writer LIKE concat('%', #{keyword}, '%')
+ </if>
+ 
+where rNum between #{displayPost} and #{postNum} 
+					order by bno desc
+</select> 
+
+<!-- 게시물 총 갯수 + 검색 적용 -->
+<select id="searchCount" parameterType="hashMap" resultType="int">
+  select bno, title, content, writer, regDate, viewCnt 
+from (select bno, title, content, writer, regDate, viewCnt, row_number() 
+		over(order by bno desc) as rNum 
+			from tbl_board
+			) mb 
+  
+ <if test='searchType.equals("title")'>
+  WHERE title LIKE concat('%', #{keyword}, '%')
+ </if>
+ 
+ <if test='searchType.equals("content")'>
+  WHERE content LIKE concat('%', #{keyword}, '%')
+ </if>
+ 
+ <if test='searchType.equals("title_content")'>
+  WHERE title LIKE concat('%', #{keyword}, '%') 
+   or content LIKE concat('%', #{keyword}, '%')
+ </if>
+ 
+ <if test='searchType.equals("writer")'>
+  WHERE writer LIKE concat('%', #{keyword}, '%')
+ </if>
+ 
+ 
+</select> 
    
 </mapper>
